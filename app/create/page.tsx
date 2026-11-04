@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import CreateAnnouncementForm from './CreateFormUI';
+export const dynamic = 'force-dynamic';
 
 export interface Category {
   id: string;

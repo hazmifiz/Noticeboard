@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import AdminDashboardClient from './AdminDashboardClient';
+export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
   const cookieStore = await cookies();
