@@ -29,7 +29,7 @@ export default async function CreateAnnouncementPage() {
     .eq('is_active', true);
 
   return (
-    <main class="max-w-2xl w-full mx-auto px-6 py-8">
+    <main className="max-w-2xl w-full mx-auto px-6 py-8">
       <CreateAnnouncementForm categories={categories || []} />
     </main>
   );
