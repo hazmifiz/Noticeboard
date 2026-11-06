@@ -57,18 +57,35 @@ export async function proxy(request: NextRequest) {
   if (user) {
     const { data: userData } = await supabase
       .from('users')
-      .select('roles(role_name)')
+      .select('role_id')
       .eq('id', user.id)
       .single();
 
-    // Safely extract role name (defaults to 'Student' if not found)
-    // @ts-ignore
-    const roleName = userData?.roles?.role_name || 'Student';
+    const { data: roleData } = await supabase
+      .from('roles')
+      .select('role_name')
+      .eq('id', userData?.role_id)
+      .single();
+      
+// Safely extract role name (defaults to 'Student' if not found)
+    const roleName = roleData?.role_name?.trim() || 'Student';
+    
+// Announcement Management Authorization
+    if (
+      (path === '/manage' || path.startsWith('/manage/')) &&
+      roleName !== 'MPP' &&
+      roleName !== 'Admin'
+    ) {
+      url.pathname = '/feed';
+      url.searchParams.set('error', 'unauthorized');
+
+      return NextResponse.redirect(url);
+    }
 
     // ==========================================
     // GATE 3: Publisher Authorization Guard (/create)
     // ==========================================
-    if (path.startsWith('/create') && roleName !== 'Publisher' && roleName !== 'Admin') {
+    if (path.startsWith('/create') && roleName !== 'MPP' && roleName !== 'Admin') {
       url.pathname = '/feed';
       url.searchParams.set('error', 'unauthorized');
       return NextResponse.redirect(url);
@@ -91,12 +108,12 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except for:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder assets
+     * - auth/callback (authentication callback handler)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

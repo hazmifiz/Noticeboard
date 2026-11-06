@@ -3,13 +3,13 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get('code');
-  const origin = requestUrl.origin;
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get('code');
+  // Next destination after successful login (defaults to /feed)
+  const next = searchParams.get('next') ?? '/feed';
 
   if (code) {
     const cookieStore = await cookies();
-    
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -24,24 +24,21 @@ export async function GET(request: Request) {
                 cookieStore.set(name, value, options)
               );
             } catch {
-              // The `setAll` method was called from a Server Component.
-              // This can be ignored if you have middleware refreshing
-              // user sessions.
+              // Ignore if called from a Server Component context
             }
           },
         },
       }
     );
 
-    // Exchange the auth code for an active session
+    // Exchange the temporary auth code for a persistent session cookie
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (!error) {
-      // Successful exchange — redirect user to their dashboard feed
-      return NextResponse.redirect(`${origin}/feed`);
+      return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  // Return the user to an error page or login screen if the code exchange fails
-  return NextResponse.redirect(`${origin}/login?error=auth_code_failed`);
+  // Redirect back to login if code exchange fails
+  return NextResponse.redirect(`${origin}/login?error=auth_failed`);
 }
