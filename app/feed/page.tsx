@@ -129,15 +129,18 @@ export default async function FeedPage({
     redirect('/onboarding');
   }
 
-  // @ts-ignore
-  let roleName = roleRes.data?.roles?.role_name || 'Student';
+  const relatedRole = roleRes.data?.roles;
+  const role = Array.isArray(relatedRole) ? relatedRole[0] : relatedRole;
+  let roleName = role?.role_name?.trim() || 'Student';
   if (userRes.data?.role_id && roleName === 'Student') {
     const { data: rData } = await supabase.from('roles').select('role_name').eq('id', userRes.data.role_id).single();
-    if (rData?.role_name) roleName = rData.role_name;
+    if (rData?.role_name) roleName = rData.role_name.trim();
   }
 
   const categories = categoriesRes.data || [];
   const subscribedCatIds = new Set(subsRes.data?.map((s) => s.category_id) || []);
+  const subscribedCategories = categories.filter((category) => subscribedCatIds.has(category.id));
+  const canViewSubscriptions = roleName === 'Student' || roleName === 'MPP';
   if (subsRes.error) {
     console.error(
       'LOAD SUBSCRIPTIONS ERROR:',
@@ -292,34 +295,7 @@ export default async function FeedPage({
       </header>
 
 
-      {/* App Shell Layout */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto px-6 py-6 gap-6">
-        {/* Left Sidebar */}
-        {(roleName === 'MPP' || roleName === 'Student' ) && (
-        <aside className="w-64 shrink-0 space-y-6 hidden md:block">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">My Subscriptions</h3>
-            <ul className="space-y-1 text-sm">
-              {categories.map((cat) => (
-                <li key={cat.id}>
-                  <div className="flex items-center justify-between p-2 rounded-lg text-slate-700 font-medium text-xs">
-                    <span># {cat.name}</span>
-                    <span className={`w-2 h-2 rounded-full ${subscribedCatIds.has(cat.id) ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-            {/* Updates URL to trigger the popup */}
-            <Link href="/feed?modal=subscriptions" className="block w-full text-center text-xs text-blue-600 font-semibold hover:underline pt-2">
-              ⚙️ Manage All Topics
-            </Link>  
-          </div>
-          
-        </aside>
-        )}
-
-        {/* Center Main Feed */}
-        <main className="flex-1 space-y-4">
+      <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 px-6 py-6">
             <FormFeedback
             type="success"
             message={resolvedSearchParams.success}
@@ -339,6 +315,31 @@ export default async function FeedPage({
             </Link>
           </div>
 
+          {canViewSubscriptions && (
+            <section aria-labelledby="subscribed-topics" className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+              <h2 id="subscribed-topics" className="text-sm font-semibold text-slate-900">
+                Your subscribed topics
+              </h2>
+              {subscribedCategories.length > 0 ? (
+                <ul className="flex flex-wrap gap-2">
+                  {subscribedCategories.map((category) => (
+                    <li key={category.id} className="max-w-full break-words rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                      # {category.name}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate-600">You haven’t subscribed to any active topics yet.</p>
+              )}
+              <Link
+                href={{ pathname: '/feed', query: { tab: currentTab, search: searchTerm, modal: 'subscriptions' } }}
+                className="block w-full rounded-full bg-blue-50 px-4 py-2 text-center text-sm font-semibold text-blue-700 hover:bg-blue-100"
+              >
+                Manage All Topics
+              </Link>
+            </section>
+          )}
+
           {announcements.length === 0 ? (
             <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
               <h3 className="font-semibold text-slate-800">
@@ -352,13 +353,11 @@ export default async function FeedPage({
               </p>
             </div>
           ) : (
-            announcements.map((post: any) => (
+            announcements.map((post) => (
               <AnnouncementCard key={post.id} post={post} />
-              
             ))
           )}
         </main>
-      </div>
 
       {/* Subscription Popup Modal */}
       {showModal && (
@@ -367,7 +366,11 @@ export default async function FeedPage({
             <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-900">Manage Subscriptions</h2>
               
-              <Link href="/feed" className="text-slate-400 hover:text-slate-600 text-2xl font-light leading-none">
+              <Link
+                href={{ pathname: '/feed', query: { tab: currentTab, search: searchTerm } }}
+                aria-label="Close subscription settings"
+                className="text-slate-400 hover:text-slate-600 text-2xl font-light leading-none"
+              >
                 &times;
               </Link>
             </div>
