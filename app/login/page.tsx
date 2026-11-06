@@ -17,10 +17,10 @@ export default function LoginPage() {
     setStatus('loading');
     
     // Enforce college domain before sending
-   /* if (!email.endsWith('@beranang.kpm.edu.my')) {
+    if (!email.endsWith('@beranang.kpm.edu.my')) {
       setStatus('error');
       return;
-    }*/
+    }
 
       const redirectUrl =
         `${window.location.origin}/auth/callback`;
