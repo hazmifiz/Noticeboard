@@ -174,9 +174,9 @@ export default async function ManageAnnouncementsPage({
         semesters: [],
     };
 
-    // Supabase returns the related programme as an object
-    // for this many-to-one relationship.
-    const programme = target.programmes;
+    const programme = Array.isArray(target.programmes)
+        ? target.programmes[0]
+        : target.programmes;
 
     if (
         programme?.code &&

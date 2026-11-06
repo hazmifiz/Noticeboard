@@ -303,13 +303,14 @@ export async function updateAnnouncementStatus(formData: FormData) {
     .maybeSingle();
 
   if (updateError) {
-    console.error('STATUS UPDATE ERROR:', error);
+    console.error('STATUS UPDATE ERROR:', updateError);
 
-    feedbackUrl =
-      '/manage?error=' +
-      encodeURIComponent(
-        'Unable to publish. Please review the target programme and semester selections.'
-      );
+    const message =
+      newStatus === 'published'
+        ? 'Unable to publish. Please review the target programme and semester selections.'
+        : 'Unable to move the announcement to drafts. Please try again.';
+
+    redirect('/manage?error=' + encodeURIComponent(message));
   }
 
   if (!updated) {

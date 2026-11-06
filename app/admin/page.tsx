@@ -150,7 +150,10 @@ if (moderationError) {
   throw new Error('Failed to load announcements for moderation');
 }
 
-const allModerationPosts = moderationPosts ?? [];
+const allModerationPosts = (moderationPosts ?? []).map((post) => ({
+  ...post,
+  publisher: Array.isArray(post.users) ? post.users[0] : post.users,
+}));
 
   const totalUsers = usersCountRes.count || 0;
   const categories = categoriesRes.data || [];
@@ -456,11 +459,11 @@ const allModerationPosts = moderationPosts ?? [];
               {/* Publisher */}
               <td className="px-4 py-4 align-top">
                 <p className="font-medium text-slate-800">
-                  {post.users?.full_name || 'Unknown Publisher'}
+                  {post.publisher?.full_name || 'Unknown Publisher'}
                 </p>
 
                 <p className="mt-1 text-xs text-slate-500">
-                  {post.users?.email || ''}
+                  {post.publisher?.email || ''}
                 </p>
               </td>
 
